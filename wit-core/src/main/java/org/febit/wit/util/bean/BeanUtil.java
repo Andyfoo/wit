@@ -1,6 +1,8 @@
 // Copyright (c) 2013-present, febit.org. All Rights Reserved.
 package org.febit.wit.util.bean;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import org.febit.wit.util.ClassMap;
 import org.febit.wit.util.ClassUtil;
 
@@ -13,12 +15,13 @@ import java.util.Map;
 /**
  * @author zqq90
  */
+@SuppressWarnings({
+        "squid:RedundantThrowsDeclarationCheck"
+})
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class BeanUtil {
 
     private static final ClassMap<Map<String, Accessor>> CACHE = new ClassMap<>();
-
-    private BeanUtil() {
-    }
 
     public static Object get(final Object bean, final String name) throws BeanException {
         Getter getter = getAccessor(bean.getClass(), name).getter;
@@ -50,7 +53,7 @@ public class BeanUtil {
     }
 
     private static Map<String, Accessor> resolveAccessors(Class<?> cls) {
-        final Map<String, Accessor> map = new HashMap<>();
+        final Map<String, Accessor> map = new HashMap<>(16);
         FieldInfoResolver.resolve(cls)
                 .forEach(fieldInfo -> map.put(fieldInfo.name,
                         new Accessor(fieldInfo.getGetter(), fieldInfo.getSetter())));

@@ -1,29 +1,39 @@
 // Copyright (c) 2013-present, febit.org. All Rights Reserved.
 package org.febit.wit.util;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import lombok.val;
 import org.febit.wit.exceptions.UncheckedException;
 
-import java.lang.reflect.*;
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * @author zqq90
  */
+@SuppressWarnings({
+        "WeakerAccess"
+})
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ClassUtil {
 
     private static final ClassMap<Map<String, Method[]>> PUBLIC_MEMBER_METHODS_CACHE = new ClassMap<>();
-
-    private ClassUtil() {
-    }
 
     public static String getClassName(Object object) {
         return object != null ? object.getClass().getName() : "null";
     }
 
     public static Map<String, Field> getSettableMemberFields(final Class<?> type) {
-        final Map<String, Field> fields = new HashMap<>();
+        val fields = new HashMap<String, Field>();
         Class<?> cls = type;
         while (cls != null && cls != Object.class) {
             for (Field f : cls.getDeclaredFields()) {
@@ -46,47 +56,28 @@ public class ClassUtil {
         if (map == null) {
             map = PUBLIC_MEMBER_METHODS_CACHE.putIfAbsent(type, new HashMap<>());
         }
-        Method[] result = map.get(name);
-        if (result == null) {
-            result = resolvePublicMemberMethods(type, name);
-            map.put(name, result);
-        }
-        return result;
+        return map.computeIfAbsent(name,
+                n -> resolvePublicMemberMethods(type, n));
     }
 
     private static Method[] resolvePublicMemberMethods(Class<?> type, String name) {
-        Method[] allMethods = type.getMethods();
-        Map<String, Method> result = new HashMap<>();
-        for (Method method : allMethods) {
-            if (!isPublic(method)
-                    || isStatic(method)
-                    || !method.getName().equals(name)) {
-                continue;
-            }
-            StringBuilder keyBuf = new StringBuilder();
-            for (Class<?> parameterType : method.getParameterTypes()) {
-                keyBuf.append(parameterType.getName())
-                        .append(',');
-            }
-            String key = keyBuf.toString();
-            Method old = result.get(key);
-            if (old == null
-                    || old.getDeclaringClass()
-                    .isAssignableFrom(method.getDeclaringClass())) {
-                result.put(key, method);
-            }
-        }
-        Method[] methods = result.values().toArray(new Method[result.size()]);
-        setAccessible(methods);
-        return methods;
+        return getMethods(type,
+                method -> !isPublic(method)
+                        || isStatic(method)
+                        || !method.getName().equals(name));
     }
 
     public static Method[] getPublicMethods(Class<?> type, String name) {
+        return getMethods(type,
+                method -> !isPublic(method)
+                        || !method.getName().equals(name));
+    }
+
+    private static Method[] getMethods(Class<?> type, Predicate<Method> exclude) {
         Method[] allMethods = type.getMethods();
         Map<String, Method> result = new HashMap<>();
         for (Method method : allMethods) {
-            if (!isPublic(method)
-                    || !method.getName().equals(name)) {
+            if (exclude.test(method)) {
                 continue;
             }
             StringBuilder keyBuf = new StringBuilder();
@@ -102,7 +93,8 @@ public class ClassUtil {
                 result.put(key, method);
             }
         }
-        Method[] methods = result.values().toArray(new Method[result.size()]);
+        val methods = result.values()
+                .toArray(new Method[0]);
         setAccessible(methods);
         return methods;
     }
@@ -238,14 +230,24 @@ public class ClassUtil {
         return Modifier.isFinal(member.getModifiers());
     }
 
+    @SuppressWarnings({
+            "BooleanMethodIsAlwaysInverted"
+    })
     public static boolean isPublic(Class<?> cls) {
         return Modifier.isPublic(cls.getModifiers());
     }
 
+    @SuppressWarnings({
+            "BooleanMethodIsAlwaysInverted"
+    })
     public static boolean isPublic(Member member) {
         return Modifier.isPublic(member.getModifiers());
     }
 
+    /**
+     * @deprecated unused
+     */
+    @Deprecated
     public static boolean isProtected(Member member) {
         return Modifier.isProtected(member.getModifiers());
     }
@@ -277,8 +279,8 @@ public class ClassUtil {
 
     public static Object newInstance(final Class<?> type) {
         try {
-            return type.newInstance();
-        } catch (InstantiationException | IllegalAccessException ex) {
+            return type.getConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException ex) {
             throw new UncheckedException(ex);
         }
     }

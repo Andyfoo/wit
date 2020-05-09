@@ -1,6 +1,7 @@
 // Copyright (c) 2013-present, febit.org. All Rights Reserved.
 package org.febit.wit;
 
+import lombok.Getter;
 import org.febit.wit.core.NativeFactory;
 import org.febit.wit.exceptions.IllegalConfigException;
 import org.febit.wit.exceptions.ResourceNotFoundException;
@@ -9,7 +10,11 @@ import org.febit.wit.io.charset.CoderFactory;
 import org.febit.wit.loaders.Loader;
 import org.febit.wit.loggers.Logger;
 import org.febit.wit.resolvers.ResolverManager;
-import org.febit.wit.util.*;
+import org.febit.wit.util.InternedEncoding;
+import org.febit.wit.util.Petite;
+import org.febit.wit.util.Props;
+import org.febit.wit.util.PropsUtil;
+import org.febit.wit.util.StringUtil;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,26 +25,41 @@ import java.util.concurrent.ConcurrentMap;
  *
  * @author zqq90
  */
+@SuppressWarnings({
+        "WeakerAccess"
+})
 public class Engine {
 
     public static final String DEFAULT_WIM = "/wit-default.wim";
 
     protected final ConcurrentMap<String, Template> cachedTemplates = new ConcurrentHashMap<>();
 
+    @Getter
     protected boolean looseVar;
+    @Getter
     protected boolean shareRootData = true;
+    @Getter
     protected boolean trimCodeBlockBlankLine = true;
+    @Getter
     protected boolean looseSemicolon = true;
+    @Getter
     protected InternedEncoding encoding;
+
     protected String inits;
     protected String vars;
 
     protected Petite petite;
-    protected Logger logger;
     protected Loader loader;
+
+    @Getter
+    protected Logger logger;
+    @Getter
     protected GlobalManager globalManager;
+    @Getter
     protected CoderFactory coderFactory;
+    @Getter
     protected NativeFactory nativeFactory;
+    @Getter
     protected ResolverManager resolverManager;
 
     protected void executeInits() throws ResourceNotFoundException {
@@ -155,46 +175,6 @@ public class Engine {
 
     public void inject(String key, final Object bean) {
         this.petite.inject(key, bean);
-    }
-
-    public CoderFactory getCoderFactory() {
-        return coderFactory;
-    }
-
-    public boolean isLooseVar() {
-        return looseVar;
-    }
-
-    public boolean isTrimCodeBlockBlankLine() {
-        return trimCodeBlockBlankLine;
-    }
-
-    public boolean isLooseSemicolon() {
-        return looseSemicolon;
-    }
-
-    public Logger getLogger() {
-        return logger;
-    }
-
-    public GlobalManager getGlobalManager() {
-        return globalManager;
-    }
-
-    public NativeFactory getNativeFactory() {
-        return nativeFactory;
-    }
-
-    public boolean isShareRootData() {
-        return shareRootData;
-    }
-
-    public ResolverManager getResolverManager() {
-        return resolverManager;
-    }
-
-    public InternedEncoding getEncoding() {
-        return encoding;
     }
 
     public String[] getVars() {

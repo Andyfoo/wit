@@ -1,6 +1,8 @@
 // Copyright (c) 2013-present, febit.org. All Rights Reserved.
 package org.febit.wit.util;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import org.febit.wit.core.ast.Statement;
 import org.febit.wit.exceptions.ScriptRuntimeException;
 import org.febit.wit.lang.Iter;
@@ -10,15 +12,20 @@ import org.febit.wit.lang.iter.AbstractIter;
 import org.febit.wit.lang.iter.MapKeyIter;
 
 import java.lang.reflect.Array;
-import java.util.*;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
 /**
  * @author zqq90
  */
+@SuppressWarnings({
+        "WeakerAccess"
+})
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class CollectionUtil {
-
-    private CollectionUtil() {
-    }
 
     public static int getSize(final Object object) {
         if (object == null) {
@@ -69,6 +76,9 @@ public class CollectionUtil {
         throw new ScriptRuntimeException("Unsupported type to KeyIter: " + o1.getClass(), statement);
     }
 
+    @SuppressWarnings({
+            "squid:S3776" // Cognitive Complexity of methods should not be too high
+    })
     public static Iter toIter(final Object o1, Statement statement) {
         if (o1 == null) {
             return null;

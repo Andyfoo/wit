@@ -2,15 +2,18 @@
 package org.febit.wit.asm;
 
 import org.febit.wit.exceptions.ScriptRuntimeException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author zqq90
  */
-public class AsmResolverManagerTest {
+class AsmResolverManagerTest {
 
+    @SuppressWarnings({"unused"})
     public static class Foo {
 
         public String f1 = "foo:f1";
@@ -61,23 +64,21 @@ public class AsmResolverManagerTest {
     }
 
     @Test
-    public void testPrivateClass() {
-        Exception exception = null;
-        try {
-            assertNull(AsmResolverManager.createResolverClass(Book.class).newInstance());
-        } catch (Exception e) {
-            exception = e;
-        }
-        assertNotNull(exception);
+    void testPrivateClass() {
+        assertThrows(Exception.class,
+                () -> AsmResolverManager.createResolverClass(Book.class)
+                        .getConstructor().newInstance());
+
     }
 
     @Test
     @SuppressWarnings("unchecked")
-    public void test() throws Exception {
+    void test() throws Exception {
 
         Foo foo = new Foo();
 
-        AsmResolver resolver = (AsmResolver) AsmResolverManager.createResolverClass(Foo.class).newInstance();
+        AsmResolver resolver = (AsmResolver) AsmResolverManager.createResolverClass(Foo.class)
+                .getConstructor().newInstance();
 
         assertNull(resolver.getMatchClass());
 
@@ -102,40 +103,19 @@ public class AsmResolverManagerTest {
 
         Exception exception;
 
-        exception = null;
-        try {
-            resolver.get(foo, "unreadable");
-        } catch (ScriptRuntimeException e) {
-            exception = e;
-        }
-        assertNotNull(exception);
+        exception = assertThrows(ScriptRuntimeException.class,
+                () -> resolver.get(foo, "unreadable"));
         assertEquals("Unreadable property " + Foo.class.getName() + "#unreadable", exception.getMessage());
 
-        exception = null;
-        try {
-            resolver.set(foo, "unwriteable", "unwriteable");
-        } catch (ScriptRuntimeException e) {
-            exception = e;
-        }
-        assertNotNull(exception);
+        exception = assertThrows(ScriptRuntimeException.class,
+                () -> resolver.set(foo, "unwriteable", "unwriteable"));
         assertEquals("Unwriteable property " + Foo.class.getName() + "#unwriteable", exception.getMessage());
-
-        exception = null;
-        try {
-            resolver.set(foo, "unXable", "unXable");
-        } catch (ScriptRuntimeException e) {
-            exception = e;
-        }
-        assertNotNull(exception);
+        exception = assertThrows(ScriptRuntimeException.class,
+                () -> resolver.set(foo, "unXable", "unXable"));
         assertEquals("Invalid property " + Foo.class.getName() + "#unXable", exception.getMessage());
 
-        exception = null;
-        try {
-            resolver.get(foo, "unXable");
-        } catch (ScriptRuntimeException e) {
-            exception = e;
-        }
-        assertNotNull(exception);
+        exception = assertThrows(ScriptRuntimeException.class,
+                () -> resolver.get(foo, "unXable"));
         assertEquals("Invalid property " + Foo.class.getName() + "#unXable", exception.getMessage());
 
     }

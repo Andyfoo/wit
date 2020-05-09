@@ -1,6 +1,8 @@
 // Copyright (c) 2013-present, febit.org. All Rights Reserved.
 package org.febit.wit.io;
 
+import lombok.val;
+
 import java.lang.ref.WeakReference;
 
 /**
@@ -19,19 +21,25 @@ public final class Buffers {
     }
 
     public char[] getChars(final int len) {
-        char[] buf = chars;
+        val buf = chars;
         return buf.length >= len ? buf : upgradeChars(len);
     }
 
+    @SuppressWarnings({
+            "squid:AssignmentInSubExpressionCheck"
+    })
     private char[] upgradeChars(final int len) {
         return this.chars = new char[getAllocateLength(this.chars.length, len)];
     }
 
     public byte[] getBytes(final int len) {
-        byte[] buf = bytes;
+        val buf = bytes;
         return buf.length >= len ? buf : upgradeBytes(len);
     }
 
+    @SuppressWarnings({
+            "squid:AssignmentInSubExpressionCheck"
+    })
     private byte[] upgradeBytes(final int len) {
         return this.bytes = new byte[getAllocateLength(this.bytes.length, len)];
     }
@@ -60,7 +68,7 @@ public final class Buffers {
 
     private static Buffers createIfAbsent(final int length) {
         Buffers peers;
-        WeakReference<Buffers> ref = CACHE.get();
+        val ref = CACHE.get();
         if (ref == null
                 || (peers = ref.get()) == null) {
             if (ref != null) {

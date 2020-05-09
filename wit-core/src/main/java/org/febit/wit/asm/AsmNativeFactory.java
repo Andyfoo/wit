@@ -1,15 +1,16 @@
 // Copyright (c) 2013-present, febit.org. All Rights Reserved.
 package org.febit.wit.asm;
 
+import lombok.val;
 import org.febit.wit.core.NativeFactory;
 import org.febit.wit.lang.MethodDeclare;
 import org.febit.wit.util.ClassUtil;
 import org.febit.wit_shaded.asm.ClassWriter;
 import org.febit.wit_shaded.asm.Constants;
 import org.febit.wit_shaded.asm.Label;
-import org.febit.wit_shaded.asm.MethodWriter;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 
@@ -22,7 +23,7 @@ public class AsmNativeFactory extends NativeFactory {
 
     @Override
     protected MethodDeclare createNativeConstructorDeclare(Constructor constructor) {
-        MethodDeclare accessor = createMethodDeclare(constructor);
+        val accessor = createMethodDeclare(constructor);
         if (accessor != null) {
             return accessor;
         }
@@ -31,7 +32,7 @@ public class AsmNativeFactory extends NativeFactory {
 
     @Override
     public MethodDeclare createNativeMethodDeclare(Method method) {
-        MethodDeclare accessor = createMethodDeclare(method);
+        val accessor = createMethodDeclare(method);
         if (accessor != null) {
             return accessor;
         }
@@ -59,12 +60,16 @@ public class AsmNativeFactory extends NativeFactory {
         return declare;
     }
 
-    static MethodDeclare createAccessor(Member obj) throws InstantiationException, IllegalAccessException {
-        final String className = "org.febit.wit.asm.Accessor" + ASMUtil.NEXT_SN.getAndIncrement();
-        final ClassWriter classWriter = new ClassWriter(Constants.V1_5, Constants.ACC_PUBLIC + Constants.ACC_FINAL,
-                ASMUtil.getInternalName(className), "java/lang/Object", METHOD_DECLARE);
+    @SuppressWarnings({
+            "squid:S3776" // Cognitive Complexity of methods should not be too high
+    })
+    static MethodDeclare createAccessor(Member obj)
+            throws InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+        val className = "org.febit.wit.asm.Accessor" + AsmUtil.NEXT_SN.getAndIncrement();
+        val classWriter = new ClassWriter(Constants.V1_5, Constants.ACC_PUBLIC + Constants.ACC_FINAL,
+                AsmUtil.getInternalName(className), "java/lang/Object", METHOD_DECLARE);
 
-        ASMUtil.visitConstructor(classWriter);
+        AsmUtil.visitConstructor(classWriter);
 
         final boolean isInterface;
         final boolean isStatic;
@@ -80,9 +85,9 @@ public class AsmNativeFactory extends NativeFactory {
             isInterface = method.getDeclaringClass().isInterface();
             isStatic = ClassUtil.isStatic(method);
             isConstructor = false;
-            ownerClass = ASMUtil.getInternalName(method.getDeclaringClass().getName());
+            ownerClass = AsmUtil.getInternalName(method.getDeclaringClass().getName());
             destName = method.getName();
-            destDesc = ASMUtil.getDescriptor(method);
+            destDesc = AsmUtil.getDescriptor(method);
             paramTypes = method.getParameterTypes();
             returnType = method.getReturnType();
         } else {
@@ -90,26 +95,26 @@ public class AsmNativeFactory extends NativeFactory {
             isInterface = false;
             isStatic = false;
             isConstructor = true;
-            ownerClass = ASMUtil.getInternalName(constructor.getDeclaringClass().getName());
-            destName = ASMUtil.METHOD_CTOR;
-            destDesc = ASMUtil.getDescriptor(constructor);
+            ownerClass = AsmUtil.getInternalName(constructor.getDeclaringClass().getName());
+            destName = AsmUtil.METHOD_CTOR;
+            destDesc = AsmUtil.getDescriptor(constructor);
             paramTypes = constructor.getParameterTypes();
             returnType = constructor.getDeclaringClass();
         }
 
-        final int paramTypesLen = paramTypes.length;
-        final MethodWriter m = classWriter.visitMethod(Constants.ACC_PUBLIC, "invoke",
+        val paramTypesLen = paramTypes.length;
+        val m = classWriter.visitMethod(Constants.ACC_PUBLIC, "invoke",
                 "(Lorg/febit/wit/InternalContext;[Ljava/lang/Object;)Ljava/lang/Object;", null);
 
         if (paramTypesLen == 0) {
             if (isStatic) {
                 m.invokeStatic(ownerClass, destName, destDesc);
-                ASMUtil.visitBoxIfNeed(m, returnType);
+                AsmUtil.visitBoxIfNeed(m, returnType);
                 m.visitInsn(Constants.ARETURN);
             } else if (isConstructor) {
                 m.visitTypeInsn(Constants.NEW, ownerClass);
                 m.visitInsn(Constants.DUP);
-                m.visitMethodInsn(Constants.INVOKESPECIAL, ownerClass, ASMUtil.METHOD_CTOR, "()V");
+                m.visitMethodInsn(Constants.INVOKESPECIAL, ownerClass, AsmUtil.METHOD_CTOR, "()V");
                 m.visitInsn(Constants.ARETURN);
             } else {
                 Label toException = new Label();
@@ -128,10 +133,10 @@ public class AsmNativeFactory extends NativeFactory {
                 m.checkCast(ownerClass);
                 m.visitMethodInsn(isInterface ? Constants.INVOKEINTERFACE
                         : Constants.INVOKEVIRTUAL, ownerClass, destName, destDesc);
-                ASMUtil.visitBoxIfNeed(m, returnType);
+                AsmUtil.visitBoxIfNeed(m, returnType);
                 m.visitInsn(Constants.ARETURN);
                 m.visitLabel(toException);
-                ASMUtil.visitScriptRuntimeException(m, "First argument can't be null.");
+                AsmUtil.visitScriptRuntimeException(m, "First argument can't be null.");
             }
         } else {
             if (isConstructor) {
@@ -159,20 +164,28 @@ public class AsmNativeFactory extends NativeFactory {
                 m.visitVarInsn(Constants.ALOAD, 2);
                 m.push(paramCount);
                 m.visitInsn(Constants.AALOAD);
-                m.checkCast(ASMUtil.getBoxedInternalName(paramType));
-                ASMUtil.visitUnboxIfNeed(m, paramType);
+                m.checkCast(AsmUtil.getBoxedInternalName(paramType));
+                AsmUtil.visitUnboxIfNeed(m, paramType);
                 paramCount++;
             }
 
+            @SuppressWarnings({
+                    "squid:S3358" // Ternary operators should not be nested
+            })
+            val opCode = isStatic ? Constants.INVOKESTATIC
+                    : isConstructor
+                    ? Constants.INVOKESPECIAL
+                    : isInterface
+                    ? Constants.INVOKEINTERFACE
+                    : Constants.INVOKEVIRTUAL;
             //Invoke Method
-            m.visitMethodInsn(isStatic ? Constants.INVOKESTATIC
-                    : isConstructor ? Constants.INVOKESPECIAL : isInterface ? Constants.INVOKEINTERFACE
-                    : Constants.INVOKEVIRTUAL, ownerClass, destName, destDesc);
-            ASMUtil.visitBoxIfNeed(m, returnType);
+            m.visitMethodInsn(opCode, ownerClass, destName, destDesc);
+            AsmUtil.visitBoxIfNeed(m, returnType);
             m.visitInsn(Constants.ARETURN);
         }
         m.visitMaxs();
 
-        return (MethodDeclare) ASMUtil.loadClass(className, classWriter).newInstance();
+        return (MethodDeclare) AsmUtil.loadClass(className, classWriter)
+                .getConstructor().newInstance();
     }
 }

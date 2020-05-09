@@ -5,23 +5,21 @@ import org.febit.wit_shaded.asm.ClassWriter;
 import org.febit.wit_shaded.asm.Constants;
 import org.febit.wit_shaded.asm.Label;
 import org.febit.wit_shaded.asm.MethodWriter;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.InvocationTargetException;
-
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author zqq90
  */
-public class AsmTest implements Constants {
+class AsmTest implements Constants {
 
     @Test
-    public void test() throws Exception {
+    void test() throws Exception {
         ClassWriter classWriter = new ClassWriter(Constants.V1_5, Constants.ACC_PUBLIC,
                 "x/Example", "java/lang/Object", null);
 
-        ASMUtil.visitConstructor(classWriter);
+        AsmUtil.visitConstructor(classWriter);
 
         MethodWriter m = classWriter.visitMethod(ACC_PUBLIC, "test",
                 "([Ljava/lang/Object;)Ljava/lang/Object;", null);
@@ -42,21 +40,16 @@ public class AsmTest implements Constants {
         m.visitInsn(Constants.AALOAD);
         m.visitTypeInsn(Constants.CHECKCAST, "java/lang/String");
         m.visitMethodInsn(Constants.INVOKEVIRTUAL, "java/lang/String", "length", "()I");
-        ASMUtil.visitBoxIfNeed(m, int.class);
+        AsmUtil.visitBoxIfNeed(m, int.class);
         m.visitInsn(Constants.ARETURN);
         m.visitLabel(toException);
-        ASMUtil.visitScriptRuntimeException(m, "First argument can't be null.");
+        AsmUtil.visitScriptRuntimeException(m, "First argument can't be null.");
         m.visitMaxs();
 
-        Class<?> exampleClass = ASMUtil.loadClass("x.Example", classWriter);
+        Class<?> exampleClass = AsmUtil.loadClass("x.Example", classWriter);
 
-        try {
-            Object obj = exampleClass.newInstance();
-            Object result = exampleClass.getMethods()[0].invoke(obj, new Object[]{new Object[]{""}});
-            assertEquals(0, result);
-        } catch (InvocationTargetException exception) {
-            exception.getCause().printStackTrace();
-            throw exception;
-        }
+        Object obj = exampleClass.getConstructor().newInstance();
+        Object result = exampleClass.getMethods()[0].invoke(obj, new Object[]{new Object[]{""}});
+        assertEquals(0, result);
     }
 }

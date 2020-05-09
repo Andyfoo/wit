@@ -1,17 +1,18 @@
 // Copyright (c) 2013-present, febit.org. All Rights Reserved.
 package org.febit.wit.util;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
 /**
  * refer to the
  * <a href="https://github.com/oblac/jodd">Jodd</a> project.
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class FileNameUtil {
 
     private static final char UNIX_SEPARATOR = '/';
     private static final char WINDOWS_SEPARATOR = '\\';
-
-    private FileNameUtil() {
-    }
 
     private static boolean isSeparator(char ch) {
         return (ch == UNIX_SEPARATOR) || (ch == WINDOWS_SEPARATOR);
@@ -52,6 +53,11 @@ public class FileNameUtil {
      * @param filename file name
      * @return normalized filename
      */
+    @SuppressWarnings({
+            "squid:S3776", // Cognitive Complexity of methods should not be too high
+            "squid:ForLoopCounterChangedCheck",
+            "squid:LabelsShouldNotBeUsedCheck"
+    })
     public static String normalize(String filename) {
         if (filename == null) {
             return null;
@@ -165,6 +171,9 @@ public class FileNameUtil {
      * @param filename the filename to find the prefix in, null returns -1
      * @return the length of the prefix, -1 if invalid or null
      */
+    @SuppressWarnings({
+            "squid:S3776" // Cognitive Complexity of methods should not be too high
+    })
     private static int getPrefixLength(String filename) {
         if (filename == null) {
             return -1;
